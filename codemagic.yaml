@@ -15,7 +15,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.vinvin.vinvin
+        bundle_identifier: com.omeryigitcoskun.vinvin
       flutter: stable
       xcode: latest
       cocoapods: default
