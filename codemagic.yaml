@@ -1,0 +1,41 @@
+# Codemagic CI — Vın Vın'i Mac'siz derleyip TestFlight'a gönderir.
+# Kurulum adımları için TESTFLIGHT.md dosyasına bak.
+#
+# ÖNEMLİ: aşağıdaki `app_store_connect: VinVinASCKey` satırındaki isim,
+# Codemagic arayüzünde eklediğin App Store Connect API anahtarının
+# "reference name"'i ile BİREBİR aynı olmalı.
+
+workflows:
+  ios-testflight:
+    name: Vın Vın iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: VinVinASCKey
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.omercoskun.vinvin
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Flutter paketlerini al
+        script: flutter pub get
+      - name: Xcode imzalama profillerini uygula
+        script: xcode-project use-profiles
+      - name: Pod'ları kur
+        script: find . -name "Podfile" -execdir pod install \;
+      - name: IPA derle (otomatik artan build numarası)
+        script: |
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$(date +%s) \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
