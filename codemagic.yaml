@@ -1,39 +1,40 @@
 # Codemagic CI — Vın Vın'i Mac'siz derleyip TestFlight'a gönderir.
-# Kurulum adımları için TESTFLIGHT.md dosyasına bak.
-#
-# ÖNEMLİ: aşağıdaki `app_store_connect: VinVinASCKey` satırındaki isim,
-# Codemagic arayüzünde eklediğin App Store Connect API anahtarının
-# "reference name"'i ile BİREBİR aynı olmalı.
+# Diğer 4 oyunda çalışan imza yöntemi: kalıcı private key (ios_signing grubunda
+# CERTIFICATE_PRIVATE_KEY) + SPM kapalı + ortak "codemagic" ASC entegrasyonu.
 
 workflows:
   ios-testflight:
     name: Vın Vın iOS → TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 60
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
     integrations:
-      app_store_connect: VinVinASCKey
+      app_store_connect: codemagic   # diğer oyunlarla aynı ASC entegrasyonu
     environment:
+      flutter: stable
+      groups:
+        - ios_signing   # CERTIFICATE_PRIVATE_KEY (diğer oyunlarla aynı anahtar)
       vars:
         BUNDLE_ID: "com.omeryigitcoskun.vinvin"
-      flutter: stable
-      xcode: latest
-      cocoapods: default
     scripts:
-      - name: Flutter paketlerini al
+      - name: Swift Package Manager'ı kapat (CocoaPods'a zorla)
+        script: flutter config --no-enable-swift-package-manager
+      - name: Flutter paketleri
         script: flutter pub get
-      - name: Keychain başlat
-        script: keychain initialize
-      - name: İmzalama sertifikası + profili al/oluştur
+      - name: Kod imzalama (kalıcı anahtarla sertifika + profil)
         script: |
+          keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
             --create
-      - name: Sertifikaları keychain'e ekle
-        script: keychain add-certificates
-      - name: Xcode imzalama profillerini uygula
-        script: xcode-project use-profiles
-      - name: Pod'ları kur
-        script: find . -name "Podfile" -execdir pod install \;
+          keychain add-certificates
+          xcode-project use-profiles
       - name: IPA derle (otomatik artan build numarası)
         script: |
           flutter build ipa --release \
@@ -42,7 +43,6 @@ workflows:
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
