@@ -44,6 +44,19 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  flutter_launcher_icons: ^0.14.3
+
+# Uygulama ikonu üretimi: assets/icon/icon.png (1024x1024) -> tüm platformlar.
+flutter_launcher_icons:
+  image_path: "assets/icon/icon.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#141E30"
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
