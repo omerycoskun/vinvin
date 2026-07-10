@@ -13,15 +13,23 @@ workflows:
     integrations:
       app_store_connect: VinVinASCKey
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.omeryigitcoskun.vinvin
+      vars:
+        BUNDLE_ID: "com.omeryigitcoskun.vinvin"
       flutter: stable
       xcode: latest
       cocoapods: default
     scripts:
       - name: Flutter paketlerini al
         script: flutter pub get
+      - name: Keychain başlat
+        script: keychain initialize
+      - name: İmzalama sertifikası + profili al/oluştur
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+      - name: Sertifikaları keychain'e ekle
+        script: keychain add-certificates
       - name: Xcode imzalama profillerini uygula
         script: xcode-project use-profiles
       - name: Pod'ları kur
