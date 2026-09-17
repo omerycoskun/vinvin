@@ -130,6 +130,21 @@ namespace VinVin.EditorTools
             return fallback;
         }
 
+        /// <summary>Yerel görsel kontrol için Windows oyunu (build/Win/VinVin.exe).</summary>
+        public static void BuildWindows()
+        {
+            Setup();
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = "build/Win/VinVin.exe",
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.None,
+            });
+            Debug.Log($"[VinVin] Windows build: {report.summary.result}");
+            if (report.summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
+        }
+
         public static void BuildiOS()
         {
             Setup();

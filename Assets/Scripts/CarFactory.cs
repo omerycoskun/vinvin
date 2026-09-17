@@ -13,8 +13,8 @@ namespace VinVin
         static readonly int ColorId = Shader.PropertyToID("_Color");
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
-        /// <summary>Modelin ön yönü için ek dönüş (model paketine göre ayarlanır).</summary>
-        public static float ModelYawOffset = 180f;
+        /// <summary>Modelin ön yönü için ek dönüş. Kenney Car Kit modelleri zaten +Z'ye bakar.</summary>
+        public static float ModelYawOffset = 0f;
 
         public static GameObject Prefab(string model)
         {

@@ -231,12 +231,12 @@ namespace VinVin
             Show(hud);
         }
 
-        public bool Gas => hud.gameObject.activeInHierarchy && (gas.Held || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W));
+        public bool Gas => hud.gameObject.activeInHierarchy && (gas.Held || AutoShot.Gas || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W));
         public bool Brake => hud.gameObject.activeInHierarchy && (brake.Held || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S));
 
         public float SteerInput()
         {
-            float s = 0;
+            float s = AutoShot.Steer;
             if (left.Held || Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) s -= 1;
             if (right.Held || Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) s += 1;
             return s;

@@ -219,6 +219,8 @@ namespace VinVin
             ResetRun(true);
             State = GameState.Playing;
             speedKmh = 70f;
+            // İlk saniyelerden itibaren yol boş kalmasın.
+            for (int i = 0; i < 7; i++) SpawnVehicle(playerZ + 45f + i * 32f + (float)rng.NextDouble() * 12f, idle: false);
             ui.ShowHud();
             sound.Click();
         }
@@ -510,11 +512,15 @@ namespace VinVin
             else
             {
                 float k = carDef != null ? Mathf.Clamp01(speedKmh / carDef.MaxKmh) : 0;
-                var p = new Vector3(playerX * 0.85f, 0, playerZ);
-                target = p + new Vector3(0, 3.1f + k * 0.4f, -7.8f - k * 1.6f);
-                look = new Vector3(playerX * 0.6f, 1.0f, playerZ + 14f);
-                cam.transform.position = Vector3.SmoothDamp(cam.transform.position, target, ref camVel, 0.08f);
-                cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, 60f + k * 16f, dt * 2.5f);
+                // İleri eksende gecikme olmasın (yüksek hızda araç küçülmesin): z doğrudan,
+                // yalnızca yan/yükseklik yumuşatılır.
+                target = new Vector3(playerX * 0.85f, 2.7f + k * 0.3f, playerZ - 6.4f - k * 1.0f);
+                var cur = cam.transform.position;
+                float nx = Mathf.SmoothDamp(cur.x, target.x, ref camVel.x, 0.12f);
+                float ny = Mathf.SmoothDamp(cur.y, target.y, ref camVel.y, 0.25f);
+                cam.transform.position = new Vector3(nx, ny, target.z);
+                look = new Vector3(playerX * 0.7f, 1.0f, playerZ + 12f);
+                cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, 58f + k * 14f, dt * 2.5f);
             }
 
             var rot = Quaternion.LookRotation(look - cam.transform.position);
