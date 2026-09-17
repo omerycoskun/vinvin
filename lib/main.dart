@@ -14,9 +14,12 @@ Future<void> main() async {
     DeviceOrientation.landscapeRight,
   ]);
   await GameStore.instance.load();
-  // Reklamları arka planda başlat (web/masaüstünde no-op).
-  unawaited(AdService.instance.initialize());
   runApp(const VinVinApp());
+  // iOS ATT izin penceresi uygulama AKTİF olduğunda açılabilir; bu yüzden
+  // reklam başlatma (önce ATT izni ister) ilk kare çizildikten sonra yapılır.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(AdService.instance.initialize());
+  });
 }
 
 class VinVinApp extends StatelessWidget {
