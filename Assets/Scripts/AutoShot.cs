@@ -17,6 +17,7 @@ namespace VinVin
 
         string folder;
         int index;
+        int scale = 1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Init()
@@ -28,7 +29,10 @@ namespace VinVin
                 Active = true;
                 var go = new GameObject("AutoShot");
                 DontDestroyOnLoad(go);
-                go.AddComponent<AutoShot>().folder = args[i + 1];
+                var shot = go.AddComponent<AutoShot>();
+                shot.folder = args[i + 1];
+                for (int j = 0; j < args.Length - 1; j++)
+                    if (args[j] == "-shotscale" && int.TryParse(args[j + 1], out var sc)) shot.scale = Mathf.Clamp(sc, 1, 4);
             }
         }
 
@@ -71,7 +75,7 @@ namespace VinVin
         {
             yield return new WaitForEndOfFrame();
             var path = Path.Combine(folder, name + ".png");
-            ScreenCapture.CaptureScreenshot(path);
+            ScreenCapture.CaptureScreenshot(path, scale);
             index++;
             yield return null;
         }

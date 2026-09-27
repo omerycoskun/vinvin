@@ -49,7 +49,9 @@ namespace VinVin
             var scaler = go.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
-            scaler.matchWidthOrHeight = 1f;
+            // Yatay oyun: ölçek GENİŞLİĞE göre. 4:3 ekranlarda (iPad) yüksekliğe
+            // göre ölçeklenince kontroller birbirine biniyordu.
+            scaler.matchWidthOrHeight = 0f;
 
             if (UnityEngine.Object.FindAnyObjectByType<EventSystem>() == null)
             {
