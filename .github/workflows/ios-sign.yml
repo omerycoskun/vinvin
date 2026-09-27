@@ -1,0 +1,90 @@
+# Vın Vın 3D — imzala + TestFlight (GitHub Actions, macOS, ücretsiz: repo herkese açık).
+#
+# Bu dosya `ios-xcode` dalına tools/export_ios.sh tarafından .github/workflows/ altına kopyalanır.
+# O dal yalnızca Unity'nin ürettiği Xcode projesini (parçalara bölünmüş tar.gz) taşır.
+#
+# İmza, diğer oyunlarda Codemagic'te çalışan yöntemin aynısı (codemagic-cli-tools):
+# kalıcı sertifika anahtarı + App Store Connect API anahtarı.
+# Gerekli repo secret'ları: APP_STORE_CONNECT_PRIVATE_KEY, CERTIFICATE_PRIVATE_KEY
+
+name: iOS TestFlight
+
+on:
+  push:
+    branches: [ios-xcode]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: true
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      BUNDLE_ID: com.omeryigitcoskun.vinvin
+      APP_STORE_CONNECT_KEY_IDENTIFIER: 97HY5S2F6M
+      APP_STORE_CONNECT_ISSUER_ID: 88031734-c6c0-490f-b0f8-feb372dac840
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secret kontrolü
+        run: |
+          missing=0
+          [ -n "$APP_STORE_CONNECT_PRIVATE_KEY" ] || { echo "::error::APP_STORE_CONNECT_PRIVATE_KEY secret'ı yok"; missing=1; }
+          [ -n "$CERTIFICATE_PRIVATE_KEY" ] || { echo "::error::CERTIFICATE_PRIVATE_KEY secret'ı yok"; missing=1; }
+          exit $missing
+
+      - name: Xcode projesini birleştir ve aç
+        run: |
+          cat xcode.tar.gz.part-* | tar -xzf -
+          ls iOS | head
+
+      - name: Info.plist (App Store anahtarları)
+        run: |
+          P=iOS/Info.plist
+          /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$P"
+          /usr/libexec/PlistBuddy -c "Delete :NSUserTrackingUsageDescription" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$P"
+
+      - name: Xcode seç
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: codemagic-cli-tools
+        run: pip3 install --break-system-packages codemagic-cli-tools
+
+      - name: İmzalama (sertifika + profil)
+        run: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles --project iOS/Unity-iPhone.xcodeproj
+
+      - name: IPA derle
+        run: |
+          xcode-project build-ipa \
+            --project iOS/Unity-iPhone.xcodeproj \
+            --scheme Unity-iPhone \
+            --config Release
+
+      - name: TestFlight'a yükle
+        run: |
+          IPA="$(find build/ios/ipa -name '*.ipa' | head -1)"
+          ls -la "$IPA"
+          app-store-connect publish --path "$IPA"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logs
+          path: /tmp/xcodebuild_logs/*.log
+          retention-days: 7
